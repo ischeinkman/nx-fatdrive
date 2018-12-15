@@ -1,0 +1,44 @@
+[package]
+name = "nx-fatdrive"
+version = "0.0.5"
+authors = ["scheinkman.ilan@gmail.com"]
+
+[[bin]]
+name = "fatdrive"
+path = "src/lib.rs"
+debug = true
+lto = false
+opt-level = 0
+
+[profile.dev]
+panic = "unwind"
+lto = false
+debug = true
+opt-level = 0
+
+[profile.test]
+panic = "unwind"
+lto = false
+debug = true
+opt-level = 0
+
+[profile.release]
+panic = "unwind"
+lto = false
+debug = true
+opt-level = 0
+
+[dependencies.libnx-rs]
+git = "https://github.com/ischeinkman/libnx-rs"
+
+[dependencies.libc]
+version = "0.2"
+
+[dependencies.rand]
+version = "0.5"
+
+[replace]
+"num_cpus:1.8.0" = { git = 'https://github.com/kloumpt/num_cpus/', branch = 'nintendo-3ds-horizon' }
+
+[features]
+default-features = []
