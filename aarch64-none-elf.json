@@ -31,7 +31,7 @@
     "relocation-model" : "pic",
     "max-atomic-width": 128,
     "exe-suffix": ".nx_elf",
-    "staticlib-suffix" : ".nx_staticlib",
+    "staticlib-suffix" : ".a",
     "trap-unreachable" : true,
     "emit-debug-gdb-scripts" : true,
     "requires-uwtable" : true

@@ -3,12 +3,16 @@ name = "nx-fatdrive"
 version = "0.0.5"
 authors = ["scheinkman.ilan@gmail.com"]
 
+#[lib]
+#crate-type = ["staticlib", "rlib"]
+
 [[bin]]
 name = "fatdrive"
-path = "src/lib.rs"
+path = "src/main.rs"
 debug = true
 lto = false
 opt-level = 0
+panic = "unwind"
 
 [profile.dev]
 panic = "unwind"
@@ -27,6 +31,12 @@ panic = "unwind"
 lto = false
 debug = true
 opt-level = 0
+
+[dependencies]
+scsi = {git = "https://github.com/ischeinkman/scsi-rs"}
+fatfs = {git= "https://github.com/rafalh/rust-fatfs", default-features=false, features=["std", "alloc"]}
+mbr-nostd = {git = "https://github.com/ischeinkman/mbr-nostd"}
+lazy_static = "1.2.0"
 
 [dependencies.libnx-rs]
 git = "https://github.com/ischeinkman/libnx-rs"
