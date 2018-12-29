@@ -29,46 +29,30 @@ impl UsbClient {
     }
 
     pub fn pull_bytes(&mut self, buffer: &mut AlignedBuffer) -> Result<usize, String> {
-        println!("UsbClient::pull START");
-        eprintln!("UsbClient::pull START");
         if buffer.size() == 0 {
-            println!("Got read size of 0!");
-            eprintln!("Got read size of 0!");
             return Err(format!("Got read size of 0!"));
         }
         if buffer.alignment() != 0x1000 {
-            println!("Alignment incorrect! Wanted 0x1000 but have {}.\n", buffer.alignment());
-            eprintln!("Alignment incorrect! Wanted 0x1000 but have {}.\n", buffer.alignment());
             return Err(format!("Alignment incorrect! Wanted 0x1000 but have {}.\n", buffer.alignment()));
         }
         let mut session = &mut self.read_endpoint;
         let rval = session
             .read(buffer.as_slice_mut())
             .map_err(|e| format!("Read Error: {:?}", e))?;
-        println!("UsbClient::pull END: {}", rval);
-        eprintln!("UsbClient::pull END: {}", rval);
         Ok(rval)
     }
 
     pub fn push_bytes(&mut self, buffer: &AlignedBuffer) -> Result<usize, String> {
-        println!("UsbClient::push START");
-        eprintln!("UsbClient::push START");
         if buffer.size() == 0 {
-            println!("Got write size of 0!");
-            eprintln!("Got write size of 0!");
             return Err(format!("Got write size of 0!"));
         }
         if buffer.alignment() != 0x1000 {
-            println!("Alignment incorrect! Wanted 0x1000 but have {}.\n", buffer.alignment());
-            eprintln!("Alignment incorrect! Wanted 0x1000 but have {}.\n", buffer.alignment());
             return Err(format!("Alignment incorrect! Wanted 0x1000 but have {}.\n", buffer.alignment()));
         }
         let mut session = &mut self.write_endpoint;
         let rval = session
             .write(buffer.as_slice())
             .map_err(|e| format!("Write Error: {:?}", e))?;
-        println!("UsbClient::push END: {}", rval);
-        eprintln!("UsbClient::push END: {}", rval);
         Ok(rval)
     }
     pub fn from_interface(
@@ -142,8 +126,6 @@ impl scsi::CommunicationChannel for UsbClient {
         let rval = self
             .pull_bytes(&mut shim)
             .map_err(|e| {
-                println!("Got error in read: {:?}", e);
-                eprintln!("Got error in read: {:?}", e);
                 scsi::ScsiError::from_cause(scsi::ErrorCause::UsbTransferError {
                     direction: scsi::UsbTransferDirection::In,
                 })
@@ -170,8 +152,6 @@ impl scsi::CommunicationChannel for UsbClient {
         let rval = self
             .push_bytes(&shim)
             .map_err(|e| {
-                println!("Got error in read: {:?}", e);
-                eprintln!("Got error in write: {:?}", e);
                 scsi::ScsiError::from_cause(scsi::ErrorCause::UsbTransferError {
                     direction: scsi::UsbTransferDirection::Out,
                 })

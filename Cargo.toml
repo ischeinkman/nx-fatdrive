@@ -3,8 +3,8 @@ name = "nx-fatdrive"
 version = "0.0.5"
 authors = ["scheinkman.ilan@gmail.com"]
 
-#[lib]
-#crate-type = ["staticlib", "rlib"]
+[lib]
+crate-type = ["staticlib", "rlib"]
 
 [[bin]]
 name = "fatdrive"
