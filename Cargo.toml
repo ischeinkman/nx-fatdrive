@@ -52,3 +52,6 @@ version = "0.5"
 
 [features]
 default-features = []
+
+[build-dependencies]
+cbindgen = "0.8"
