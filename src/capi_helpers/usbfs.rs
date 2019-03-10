@@ -175,7 +175,7 @@ pub unsafe extern "C" fn usbFsExit() {
             Err(_) => {
                 return;
             }
-        }
+        };
     outfile.write_fmt(format_args!("Entered USBFS exit.\n"));
     outfile.flush();
 
