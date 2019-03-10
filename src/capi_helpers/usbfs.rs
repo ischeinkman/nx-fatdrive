@@ -166,6 +166,7 @@ pub unsafe extern "C" fn usbFsInitialize() -> u32 {
 #[no_mangle]
 pub unsafe extern "C" fn usbFsExit() {
     use std::os::unix::fs::OpenOptionsExt;
+    use std::fs::OpenOptions;
     let mut outfile = match OpenOptions::new()
         .write(true)
         .create(true)

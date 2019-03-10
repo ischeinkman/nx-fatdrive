@@ -188,7 +188,7 @@ impl IdStore {
     }
 
     pub unsafe fn stat_path(&self, path : &str) -> Result<(u64, u64), u32> {
-        let stripped_path = path.replace("//", "/").trim_end_matches('/');
+        let stripped_path = path.replace("//", "/").trim_end_matches('/').to_owned();
         let mut path_itr = stripped_path.rsplitn(2, '/');
         let ent_name = match path_itr.next() {
             Some(e) => e,
