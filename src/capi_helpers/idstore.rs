@@ -95,7 +95,12 @@ impl IdStore {
             return Ok(existing);
         }
         let (fs, _guard) = get_filesystem()?;
-        let new_fl = fs.root_dir().open_dir(&path).map_err(LibnxErrMapper::map)?;
+        let new_fl = if path == "/" || path == "" {
+            fs.root_dir()
+        }
+        else {
+            fs.root_dir().open_dir(&path).map_err(LibnxErrMapper::map)? 
+        };
         Ok(self.insert_dir(path, new_fl))
     }
 
