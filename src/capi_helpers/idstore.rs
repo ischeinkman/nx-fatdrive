@@ -85,7 +85,7 @@ impl IdStore {
             return Ok(existing);
         }
         let (fs, _guard) = get_filesystem()?;
-        let new_fl = fs.root_dir().open_file(&path).map_err(|e| NX_FATDRIVE_ERR_UNKNOWN)?;
+        let new_fl = fs.root_dir().open_file(&path).map_err(LibnxErrMapper::map)?;
         Ok(self.insert_file(path, new_fl))
     }
 
@@ -95,7 +95,7 @@ impl IdStore {
             return Ok(existing);
         }
         let (fs, _guard) = get_filesystem()?;
-        let new_fl = fs.root_dir().open_dir(&path).map_err(|e| NX_FATDRIVE_ERR_UNKNOWN)?;
+        let new_fl = fs.root_dir().open_dir(&path).map_err(LibnxErrMapper::map)?;
         Ok(self.insert_dir(path, new_fl))
     }
 
@@ -106,7 +106,7 @@ impl IdStore {
                 return Err(NX_FATDRIVE_ERR_FILE_NOT_FOUND);
             }
         };
-        f.flush().map_err(|e| NX_FATDRIVE_ERR_UNKNOWN)?;
+        f.flush().map_err(LibnxErrMapper::map)?;
         self.file_name_map.remove(&id);
         Ok(())
     }

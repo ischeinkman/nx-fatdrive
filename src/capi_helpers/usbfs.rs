@@ -303,7 +303,7 @@ pub unsafe extern "C" fn usbFsSeekFile(fileid: u64, pos: u64, whence: u64, retpo
             SeekFrom::End(rel)
         },
         _ => {
-            return NX_FATDRIVE_ERR_UNKNOWN;
+            return (NX_FATDRIVE_ERR_NOT_IMPLEMENTED << 8) + NX_FATDRIVE_ERR_MODULE;
         }
     };
 
