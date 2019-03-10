@@ -165,6 +165,19 @@ pub unsafe extern "C" fn usbFsInitialize() -> u32 {
 
 #[no_mangle]
 pub unsafe extern "C" fn usbFsExit() {
+    use std::os::unix::fs::OpenOptionsExt;
+    let mut outfile = match OpenOptions::new()
+        .write(true)
+        .create(true)
+        .custom_flags(0x0080)
+        .open("UsbfsLog.txt"){
+            Ok(f) => f,
+            Err(_) => {
+                return;
+            }
+        }
+    outfile.write_fmt(format_args!("Entered USBFS exit.\n"));
+    outfile.flush();
 
     let mut id_store_guard = match id_store_ptr.lock().map_err(LibnxErrMapper::map) {
         Ok(p) => p, 
@@ -172,11 +185,15 @@ pub unsafe extern "C" fn usbFsExit() {
             return;
         }
     };
+    outfile.write_fmt(format_args!("Got ID store ptr of {}", *id_store_guard));
+    outfile.flush();
     if *id_store_guard != 0 {
         let id_store_ptr_inner = (*id_store_guard) as *mut IdStore;
         let mut id_store_box = Box::from_raw(id_store_ptr_inner);
         *id_store_guard = 0;
     }
+    outfile.write_fmt(format_args!("Unmounted ID store."));
+    outfile.flush();
 
     let mut fs_ptr_guard = match fs_ptr.lock().map_err(LibnxErrMapper::map) {
         Ok(p) => p, 
@@ -184,12 +201,16 @@ pub unsafe extern "C" fn usbFsExit() {
             return;
         }
     };
+    outfile.write_fmt(format_args!("Got FS ptr of {}", *fs_ptr_guard));
+    outfile.flush();
     if *fs_ptr_guard != 0 {
         let fs_ptr_inner = (*fs_ptr_guard) as *mut FileSystem<OffsetScsiDevice>;
         let mut fs_box = Box::from_raw(fs_ptr_inner);
         fs_box.unmount();
         *fs_ptr_guard = 0;
     }
+    outfile.write_fmt(format_args!("Unmounted FS ptr."));
+    outfile.flush();
 
     let mut usb_hs_ptr_guard = match usb_hs_ctx_ptr.lock().map_err(LibnxErrMapper::map) {
         Ok(p) => p, 
@@ -197,11 +218,15 @@ pub unsafe extern "C" fn usbFsExit() {
             return;
         }
     };
+    outfile.write_fmt(format_args!("Got USBHS_CTX ptr of {}", *usb_hs_ptr_guard));
+    outfile.flush();
     if *usb_hs_ptr_guard != 0 {
         let usb_hs_ptr_inner = (*usb_hs_ptr_guard) as *mut UsbFsServiceContext;
         let mut usb_hs_box = Box::from_raw(usb_hs_ptr_inner);
         *usb_hs_ptr_guard = 0;
     }
+    outfile.write_fmt(format_args!("Unmounted USBHS_CTX"));
+    outfile.flush();
 }
 
 #[no_mangle]
