@@ -163,6 +163,9 @@ pub unsafe extern "C" fn usbFsInitialize() -> u32 {
     return SUCCESS;
 }
 
+use std::ops::Drop;
+use std::mem::drop;
+
 #[no_mangle]
 pub unsafe extern "C" fn usbFsExit() {
     use std::os::unix::fs::OpenOptionsExt;
@@ -192,6 +195,7 @@ pub unsafe extern "C" fn usbFsExit() {
         let id_store_ptr_inner = (*id_store_guard) as *mut IdStore;
         let mut id_store_box = Box::from_raw(id_store_ptr_inner);
         *id_store_guard = 0;
+        drop(id_store_box);
     }
     outfile.write_fmt(format_args!("Unmounted ID store."));
     outfile.flush();
@@ -207,8 +211,8 @@ pub unsafe extern "C" fn usbFsExit() {
     if *fs_ptr_guard != 0 {
         let fs_ptr_inner = (*fs_ptr_guard) as *mut FileSystem<OffsetScsiDevice>;
         let mut fs_box = Box::from_raw(fs_ptr_inner);
-        fs_box.unmount();
         *fs_ptr_guard = 0;
+        drop(fs_box);
     }
     outfile.write_fmt(format_args!("Unmounted FS ptr."));
     outfile.flush();
@@ -225,6 +229,7 @@ pub unsafe extern "C" fn usbFsExit() {
         let usb_hs_ptr_inner = (*usb_hs_ptr_guard) as *mut UsbFsServiceContext;
         let mut usb_hs_box = Box::from_raw(usb_hs_ptr_inner);
         *usb_hs_ptr_guard = 0;
+        drop(usb_hs_box);
     }
     outfile.write_fmt(format_args!("Unmounted USBHS_CTX"));
     outfile.flush();
