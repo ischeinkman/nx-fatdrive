@@ -5,6 +5,6 @@ echo "Starting new build."\
  CARGO_INCREMENTAL=0\
  RUST_TARGET_PATH="$PWD"\
  RUST_BACKTRACE=1\
- xargo build --release --target=aarch64-none-elf --verbose\
+ xargo build --release --lib --target=aarch64-none-elf --verbose\
  &&\
  echo "Compiled rust target. "
