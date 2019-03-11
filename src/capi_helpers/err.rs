@@ -82,7 +82,13 @@ impl LibnxErrMapper for ScsiError {
         let desc : u32 = match err.cause {
             scsi::ErrorCause::ParseError => 0x1000,
             scsi::ErrorCause::NonBlocksizeMultipleLengthError{..} => 0x2000,
-            scsi::ErrorCause::UsbTransferError{..} => 0x3000,
+            scsi::ErrorCause::UsbTransferError{direction} => {
+                match direction {
+                    scsi::UsbTransferDirection::In => 0x3001,
+                    scsi::UsbTransferDirection::Out => 0x3002,
+                    _ => 0x3003
+                }
+            },
             scsi::ErrorCause::FlagError {..} => 0x4000,
             scsi::ErrorCause::BufferTooSmallError{..} => 0x5000,
             scsi::ErrorCause::UnsupportedOperationError => 0x6000,
