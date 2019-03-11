@@ -497,6 +497,23 @@ pub unsafe extern "C" fn usbFsDeleteDir(dirpath: *const u8) -> u32 {
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn usbFsCreateFile(filepath: *const u8) -> u32 {
+    let path : &str = match CStr::from_ptr(filepath as *const std::os::raw::c_char).to_str() {
+        Ok(s) => s,
+        Err(_e) => {
+            return NX_FATDRIVE_ERR_UNKNOWN;
+        }
+    };
+    let (mut id_store, _guard) = err_wrap!(get_id_store());
+    if let Some(old_id) = id_store.has_file(&path.to_owned()) {
+        return SUCCESS;
+    }
+    let (mut fs, _guard) = err_wrap!(get_filesystem());
+    err_wrap!(fs.root_dir().create_file(path));
+    SUCCESS
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn usbFsReadRaw(sector: u64, sectorcount: u64, buffer: *const u8) -> u32 {
     return NX_FATDRIVE_ERR_NOT_IMPLEMENTED;
 }
