@@ -173,6 +173,7 @@ pub unsafe extern "C" fn usbFsExit() {
     let mut outfile = match OpenOptions::new()
         .write(true)
         .create(true)
+        .truncate(true)
         .custom_flags(0x0080)
         .open("UsbfsLog.txt"){
             Ok(f) => f,
