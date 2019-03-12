@@ -230,7 +230,7 @@ pub unsafe extern "C" fn _fatdrive_diropen_r(r : *mut _reent, dir_state_ptr : *m
 
     let ent = path_to_dirent(fs, path);
     if !ent.is_dir() {
-        (*r).errno = errno::ENOENT;
+        (*r).errno = errno::NX_FATDRIVE_ERRNO_ENOENT;
         return ptr::null_mut();
     }
     let nstruct = DirStruct {
@@ -241,13 +241,13 @@ pub unsafe extern "C" fn _fatdrive_diropen_r(r : *mut _reent, dir_state_ptr : *m
     let state : &mut DIR_ITER = match dir_state_ptr.as_mut() {
         Some(p) => p, 
         None => {
-            (*r).errno = errno::ENOENT;
+            (*r).errno = errno::NX_FATDRIVE_ERRNO_ENOENT;
             return ptr::null_mut();
         }
     };
 
     if state.dirStruct.is_null(){
-        (*r).errno = errno::ENOENT;
+        (*r).errno = errno::NX_FATDRIVE_ERRNO_ENOENT;
         return ptr::null_mut();
     };
 
@@ -283,7 +283,7 @@ unsafe extern "C" fn _fatdrive_open_r(r: *mut _reent, fd: *mut c_void, path_ptr:
 
     let ent = path_to_dirent(fs, path);
     if !ent.is_file() {
-        (*r).errno = errno::ENOENT;
+        (*r).errno = errno::NX_FATDRIVE_ERRNO_ENOENT;
         return -1;
     }
     let nstruct = FileStruct {
@@ -292,7 +292,7 @@ unsafe extern "C" fn _fatdrive_open_r(r: *mut _reent, fd: *mut c_void, path_ptr:
     };
 
     if fd.is_null() {
-        (*r).errno = errno::ENOENT;
+        (*r).errno = errno::NX_FATDRIVE_ERRNO_ENOENT;
         return -1;
     }
 
@@ -440,21 +440,21 @@ unsafe extern "C" fn _fatdrive_rename_r( r: *mut _reent, old_path_ptr: * const u
     }
 }
 unsafe extern "C" fn _fatdrive_chmod_r(r: *mut _reent, path: * const u8, mode: mode_t) -> i32 {
-    (*r).errno = errno::ENOSYS;
-    return errno::ENOSYS;
+    (*r).errno = errno::NX_FATDRIVE_ERRNO_ENOSYS;
+    return errno::NX_FATDRIVE_ERRNO_ENOSYS;
 }
 unsafe extern "C" fn _fatdrive_fchmod_r(r: *mut _reent, fd: *mut c_void, mode: mode_t) -> i32 {
-    (*r).errno = errno::ENOSYS;
-    return errno::ENOSYS;
+    (*r).errno = errno::NX_FATDRIVE_ERRNO_ENOSYS;
+    return errno::NX_FATDRIVE_ERRNO_ENOSYS;
 }
 unsafe extern "C" fn _fatdrive_link_r(r: *mut _reent, existing: * const u8, newLink: * const u8) -> i32{
-    (*r).errno = errno::ENOSYS;
-    return errno::ENOSYS;
+    (*r).errno = errno::NX_FATDRIVE_ERRNO_ENOSYS;
+    return errno::NX_FATDRIVE_ERRNO_ENOSYS;
 }
 
 unsafe extern "C" fn _fatdrive_unlink_r(r: *mut _reent, name: * const u8) -> i32 {
-    (*r).errno = errno::ENOSYS;
-    return errno::ENOSYS;
+    (*r).errno = errno::NX_FATDRIVE_ERRNO_ENOSYS;
+    return errno::NX_FATDRIVE_ERRNO_ENOSYS;
 }
 unsafe extern "C" fn _fatdrive_rmdir_r(r: *mut _reent, path_ptr: * const u8) -> i32 {
     let path : &str = match CStr::from_ptr(path_ptr as *const std::os::raw::c_char).to_str() {
@@ -553,7 +553,7 @@ unsafe extern "C" fn _fatdrive_dirnext_r( r: *mut _reent, dirState: *mut DIR_ITE
     let mut dir_struct : &mut DirStruct = match dir_struct_ptr.as_mut() {
         Some(p) => p, 
         None => {
-            (*r).errno = errno::ENOENT as i32;
+            (*r).errno = errno::NX_FATDRIVE_ERRNO_ENOENT as i32;
             return -1;
         }
     };  
@@ -568,7 +568,7 @@ unsafe extern "C" fn _fatdrive_dirnext_r( r: *mut _reent, dirState: *mut DIR_ITE
             if !filename_ptr.is_null() {
                 let full_name = p.file_name();
                 let name_bytes = full_name.as_bytes();
-                let retlen = name_bytes.len().min(NAME_MAX);
+                let retlen = name_bytes.len().min(NX_FATDRIVE_NAME_MAX);
                 let mut filename_slice = slice::from_raw_parts_mut(filename_ptr, retlen);
                 filename_slice.copy_from_slice(&name_bytes[0 .. retlen]);
             }
@@ -589,7 +589,7 @@ unsafe extern "C" fn _fatdrive_dirnext_r( r: *mut _reent, dirState: *mut DIR_ITE
 fn is_zeroed<T>(struct_ptr : *const T) -> i32 {
     let struct_size = mem::size_of::<T>();
     if struct_ptr.is_null() {
-        return errno::ENOENT;
+        return errno::NX_FATDRIVE_ERRNO_ENOENT;
     }
 
     let struct_data : &[u8] = unsafe { slice::from_raw_parts(struct_ptr as *const u8, struct_size) };
@@ -600,7 +600,7 @@ fn is_zeroed<T>(struct_ptr : *const T) -> i32 {
     let zeroed_ref : &[u8] = zeroed_buffer.as_ref();
 
     if zeroed_ref == struct_data {
-        errno::ENOENT
+        errno::NX_FATDRIVE_ERRNO_ENOENT
     }
     else {
         0
@@ -706,17 +706,17 @@ unsafe extern "C" fn _fatdrive_lstat_r(r: *mut _reent, path_str: * const u8, st:
 
 unsafe extern "C" fn _fatdrive_chdir_r(r: *mut _reent, name: * const u8) -> i32 {
     //TODO: This
-    (*r).errno = errno::ENOSYS;
+    (*r).errno = errno::NX_FATDRIVE_ERRNO_ENOSYS;
     return -1;
 }
 unsafe extern "C" fn _fatdrive_utimes_r(r: *mut _reent, filename: * const u8, times: *const timeval) -> i32 {
     //TODO: This
-    (*r).errno = errno::ENOSYS;
+    (*r).errno = errno::NX_FATDRIVE_ERRNO_ENOSYS;
     return -1;
 }
 unsafe extern "C" fn _fatdrive_stat_vfs_r( r: *mut _reent, path: * const u8, buf: *mut statvfs) -> i32 {
     //TODO: This
-    (*r).errno = errno::ENOSYS;
+    (*r).errno = errno::NX_FATDRIVE_ERRNO_ENOSYS;
     return -1;
 }
 
@@ -728,17 +728,12 @@ const file_struct_size : usize = mem::size_of::<FileStruct>();
 #[no_mangle]
 unsafe extern "C" fn nxFatdriveMount() -> u32 {
     let mut ctx = Box::new(NewlibContext::new());
-    println!("a");
     err_wrap!(ctx.init_usb_hs_ctx());
-    println!("a");
     err_wrap!(ctx.wait_for_usb_drive(0x800000));
-    println!("a");
     err_wrap!(ctx.open_partition(0));
-    println!("a");
     let mut device = Box::new(nxfatdrive_devoptab());
     device.deviceData = Box::into_raw(ctx) as *mut c_void;
     let add_err = AddDevice(Box::into_raw(device));
-    println!("a");
     add_err as u32
 }
 
@@ -786,4 +781,132 @@ pub fn nxfatdrive_devoptab() -> devoptab_t {
         lstat_r: Some(_fatdrive_lstat_r),
         utimes_r: Some(_fatdrive_utimes_r),
     }
+}
+mod errno {
+    pub const NX_FATDRIVE_ERRNO_EPERM :i32 = 1;   /* Not owner */
+    pub const NX_FATDRIVE_ERRNO_ENOENT :i32 = 2;   /* No such file or directory */
+    pub const NX_FATDRIVE_ERRNO_ESRCH :i32 = 3;   /* No such process */
+    pub const NX_FATDRIVE_ERRNO_EINTR :i32 = 4;   /* Interrupted system call */
+    pub const NX_FATDRIVE_ERRNO_EIO :i32 = 5;   /* I/O error */
+    pub const NX_FATDRIVE_ERRNO_ENXIO :i32 = 6;   /* No such device or address */
+    pub const NX_FATDRIVE_ERRNO_E2BIG :i32 = 7;   /* Arg list too long */
+    pub const NX_FATDRIVE_ERRNO_ENOEXEC :i32 = 8;   /* Exec format error */
+    pub const NX_FATDRIVE_ERRNO_EBADF :i32 = 9;   /* Bad file number */
+    pub const NX_FATDRIVE_ERRNO_ECHILD :i32 = 10;   /* No children */
+    pub const NX_FATDRIVE_ERRNO_EAGAIN :i32 = 11;   /* No more processes */
+    pub const NX_FATDRIVE_ERRNO_ENOMEM :i32 = 12;   /* Not enough space */
+    pub const NX_FATDRIVE_ERRNO_EACCES :i32 = 13;   /* Permission denied */
+    pub const NX_FATDRIVE_ERRNO_EFAULT :i32 = 14;   /* Bad address */
+    pub const NX_FATDRIVE_ERRNO_ENOTBLK :i32 = 15;   /* Block device required */
+    pub const NX_FATDRIVE_ERRNO_EBUSY :i32 = 16;   /* Device or resource busy */
+    pub const NX_FATDRIVE_ERRNO_EEXIST :i32 = 17;   /* File exists */
+    pub const NX_FATDRIVE_ERRNO_EXDEV :i32 = 18;   /* Cross-device link */
+    pub const NX_FATDRIVE_ERRNO_ENODEV :i32 = 19;   /* No such device */
+    pub const NX_FATDRIVE_ERRNO_ENOTDIR :i32 = 20;   /* Not a directory */
+    pub const NX_FATDRIVE_ERRNO_EISDIR :i32 = 21;   /* Is a directory */
+    pub const NX_FATDRIVE_ERRNO_EINVAL :i32 = 22;   /* Invalid argument */
+    pub const NX_FATDRIVE_ERRNO_ENFILE :i32 = 23;   /* Too many open files in system */
+    pub const NX_FATDRIVE_ERRNO_EMFILE :i32 = 24;   /* File descriptor value too large */
+    pub const NX_FATDRIVE_ERRNO_ENOTTY :i32 = 25;   /* Not a character device */
+    pub const NX_FATDRIVE_ERRNO_ETXTBSY :i32 = 26;   /* Text file busy */
+    pub const NX_FATDRIVE_ERRNO_EFBIG :i32 = 27;   /* File too large */
+    pub const NX_FATDRIVE_ERRNO_ENOSPC :i32 = 28;   /* No space left on device */
+    pub const NX_FATDRIVE_ERRNO_ESPIPE :i32 = 29;   /* Illegal seek */
+    pub const NX_FATDRIVE_ERRNO_EROFS :i32 = 30;   /* Read-only file system */
+    pub const NX_FATDRIVE_ERRNO_EMLINK :i32 = 31;   /* Too many links */
+    pub const NX_FATDRIVE_ERRNO_EPIPE :i32 = 32;   /* Broken pipe */
+    pub const NX_FATDRIVE_ERRNO_EDOM :i32 = 33;   /* Mathematics argument out of domain of function */
+    pub const NX_FATDRIVE_ERRNO_ERANGE :i32 = 34;   /* Result too large */
+    pub const NX_FATDRIVE_ERRNO_ENOMSG :i32 = 35;   /* No message of desired type */
+    pub const NX_FATDRIVE_ERRNO_EIDRM :i32 = 36;   /* Identifier removed */
+    pub const NX_FATDRIVE_ERRNO_ECHRNG :i32 = 37;   /* Channel number out of range */
+    pub const NX_FATDRIVE_ERRNO_EL2NSYNC :i32 = 38;   /* Level 2 not synchronized */
+    pub const NX_FATDRIVE_ERRNO_EL3HLT :i32 = 39;   /* Level 3 halted */
+    pub const NX_FATDRIVE_ERRNO_EL3RST :i32 = 40;   /* Level 3 reset */
+    pub const NX_FATDRIVE_ERRNO_ELNRNG :i32 = 41;   /* Link number out of range */
+    pub const NX_FATDRIVE_ERRNO_EUNATCH :i32 = 42;   /* Protocol driver not attached */
+    pub const NX_FATDRIVE_ERRNO_ENOCSI :i32 = 43;   /* No CSI structure available */
+    pub const NX_FATDRIVE_ERRNO_EL2HLT :i32 = 44;   /* Level 2 halted */
+    pub const NX_FATDRIVE_ERRNO_EDEADLK :i32 = 45;   /* Deadlock */
+    pub const NX_FATDRIVE_ERRNO_ENOLCK :i32 = 46;   /* No lock */
+    pub const NX_FATDRIVE_ERRNO_EBADE :i32 = 50;   /* Invalid exchange */
+    pub const NX_FATDRIVE_ERRNO_EBADR :i32 = 51;   /* Invalid request descriptor */
+    pub const NX_FATDRIVE_ERRNO_EXFULL :i32 = 52;   /* Exchange full */
+    pub const NX_FATDRIVE_ERRNO_ENOANO :i32 = 53;   /* No anode */
+    pub const NX_FATDRIVE_ERRNO_EBADRQC :i32 = 54;   /* Invalid request code */
+    pub const NX_FATDRIVE_ERRNO_EBADSLT :i32 = 55;   /* Invalid slot */
+    pub const NX_FATDRIVE_ERRNO_EDEADLOCK :i32 = 56;   /* File locking deadlock error */
+    pub const NX_FATDRIVE_ERRNO_EBFONT :i32 = 57;   /* Bad font file fmt */
+    pub const NX_FATDRIVE_ERRNO_ENOSTR :i32 = 60;   /* Not a stream */
+    pub const NX_FATDRIVE_ERRNO_ENODATA :i32 = 61;   /* No data (for no delay io) */
+    pub const NX_FATDRIVE_ERRNO_ETIME :i32 = 62;   /* Stream ioctl timeout */
+    pub const NX_FATDRIVE_ERRNO_ENOSR :i32 = 63;   /* No stream resources */
+    pub const NX_FATDRIVE_ERRNO_ENONET :i32 = 64;   /* Machine is not on the network */
+    pub const NX_FATDRIVE_ERRNO_ENOPKG :i32 = 65;   /* Package not installed */
+    pub const NX_FATDRIVE_ERRNO_EREMOTE :i32 = 66;   /* The object is remote */
+    pub const NX_FATDRIVE_ERRNO_ENOLINK :i32 = 67;   /* Virtual circuit is gone */
+    pub const NX_FATDRIVE_ERRNO_EADV :i32 = 68;   /* Advertise error */
+    pub const NX_FATDRIVE_ERRNO_ESRMNT :i32 = 69;   /* Srmount error */
+    pub const NX_FATDRIVE_ERRNO_ECOMM :i32 = 70;   /* Communication error on send */
+    pub const NX_FATDRIVE_ERRNO_EPROTO :i32 = 71;   /* Protocol error */
+    pub const NX_FATDRIVE_ERRNO_EMULTIHOP :i32 = 74;   /* Multihop attempted */
+    pub const NX_FATDRIVE_ERRNO_ELBIN :i32 = 75;   /* Inode is remote (not really error) */
+    pub const NX_FATDRIVE_ERRNO_EDOTDOT :i32 = 76;   /* Cross mount point (not really error) */
+    pub const NX_FATDRIVE_ERRNO_EBADMSG :i32 = 77;   /* Bad message */
+    pub const NX_FATDRIVE_ERRNO_EFTYPE :i32 = 79;   /* Inappropriate file type or format */
+    pub const NX_FATDRIVE_ERRNO_ENOTUNIQ :i32 = 80;   /* Given log. name not unique */
+    pub const NX_FATDRIVE_ERRNO_EBADFD :i32 = 81;   /* f.d. invalid for this operation */
+    pub const NX_FATDRIVE_ERRNO_EREMCHG :i32 = 82;   /* Remote address changed */
+    pub const NX_FATDRIVE_ERRNO_ELIBACC :i32 = 83;   /* Can't access a needed shared lib */
+    pub const NX_FATDRIVE_ERRNO_ELIBBAD :i32 = 84;   /* Accessing a corrupted shared lib */
+    pub const NX_FATDRIVE_ERRNO_ELIBSCN :i32 = 85;   /* .lib section in a.out corrupted */
+    pub const NX_FATDRIVE_ERRNO_ELIBMAX :i32 = 86;   /* Attempting to link in too many libs */
+    pub const NX_FATDRIVE_ERRNO_ELIBEXEC :i32 = 87;   /* Attempting to exec a shared library */
+    pub const NX_FATDRIVE_ERRNO_ENOSYS :i32 = 88;   /* Function not implemented */
+    pub const NX_FATDRIVE_ERRNO_ENMFILE :i32 = 89;   /* No more files */
+    pub const NX_FATDRIVE_ERRNO_ENOTEMPTY :i32 = 90;   /* Directory not empty */
+    pub const NX_FATDRIVE_ERRNO_ENAMETOOLONG :i32 = 91;   /* File or path name too long */
+    pub const NX_FATDRIVE_ERRNO_ELOOP :i32 = 92;   /* Too many symbolic links */
+    pub const NX_FATDRIVE_ERRNO_EOPNOTSUPP :i32 = 95;   /* Operation not supported on socket */
+    pub const NX_FATDRIVE_ERRNO_EPFNOSUPPORT :i32 = 96;   /* Protocol family not supported */
+    pub const NX_FATDRIVE_ERRNO_ECONNRESET :i32 = 104;   /* Connection reset by peer */
+    pub const NX_FATDRIVE_ERRNO_ENOBUFS :i32 = 105;   /* No buffer space available */
+    pub const NX_FATDRIVE_ERRNO_EAFNOSUPPORT :i32 = 106;   /* Address family not supported by protocol family */
+    pub const NX_FATDRIVE_ERRNO_EPROTOTYPE :i32 = 107;   /* Protocol wrong type for socket */
+    pub const NX_FATDRIVE_ERRNO_ENOTSOCK :i32 = 108;   /* Socket operation on non-socket */
+    pub const NX_FATDRIVE_ERRNO_ENOPROTOOPT :i32 = 109;   /* Protocol not available */
+    pub const NX_FATDRIVE_ERRNO_ESHUTDOWN :i32 = 110;   /* Can't send after socket shutdown */
+    pub const NX_FATDRIVE_ERRNO_ECONNREFUSED :i32 = 111;   /* Connection refused */
+    pub const NX_FATDRIVE_ERRNO_EADDRINUSE :i32 = 112;   /* Address already in use */
+    pub const NX_FATDRIVE_ERRNO_ECONNABORTED :i32 = 113;   /* Software caused connection abort */
+    pub const NX_FATDRIVE_ERRNO_ENETUNREACH :i32 = 114;   /* Network is unreachable */
+    pub const NX_FATDRIVE_ERRNO_ENETDOWN :i32 = 115;   /* Network interface is not configured */
+    pub const NX_FATDRIVE_ERRNO_ETIMEDOUT :i32 = 116;   /* Connection timed out */
+    pub const NX_FATDRIVE_ERRNO_EHOSTDOWN :i32 = 117;   /* Host is down */
+    pub const NX_FATDRIVE_ERRNO_EHOSTUNREACH :i32 = 118;   /* Host is unreachable */
+    pub const NX_FATDRIVE_ERRNO_EINPROGRESS :i32 = 119;   /* Connection already in progress */
+    pub const NX_FATDRIVE_ERRNO_EALREADY :i32 = 120;   /* Socket already connected */
+    pub const NX_FATDRIVE_ERRNO_EDESTADDRREQ :i32 = 121;   /* Destination address required */
+    pub const NX_FATDRIVE_ERRNO_EMSGSIZE :i32 = 122;   /* Message too long */
+    pub const NX_FATDRIVE_ERRNO_EPROTONOSUPPORT :i32 = 123;   /* Unknown protocol */
+    pub const NX_FATDRIVE_ERRNO_ESOCKTNOSUPPORT :i32 = 124;   /* Socket type not supported */
+    pub const NX_FATDRIVE_ERRNO_EADDRNOTAVAIL :i32 = 125;   /* Address not available */
+    pub const NX_FATDRIVE_ERRNO_ENETRESET :i32 = 126;   /* Connection aborted by network */
+    pub const NX_FATDRIVE_ERRNO_EISCONN :i32 = 127;   /* Socket is already connected */
+    pub const NX_FATDRIVE_ERRNO_ENOTCONN :i32 = 128;   /* Socket is not connected */
+    pub const NX_FATDRIVE_ERRNO_ETOOMANYREFS :i32 = 129;
+    pub const NX_FATDRIVE_ERRNO_EPROCLIM :i32 = 130;
+    pub const NX_FATDRIVE_ERRNO_EUSERS :i32 = 131;
+    pub const NX_FATDRIVE_ERRNO_EDQUOT :i32 = 132;
+    pub const NX_FATDRIVE_ERRNO_ESTALE :i32 = 133;
+    pub const NX_FATDRIVE_ERRNO_ENOTSUP :i32 = 134;   /* Not supported */
+    pub const NX_FATDRIVE_ERRNO_ENOMEDIUM :i32 = 135;   /* No medium (in tape drive) */
+    pub const NX_FATDRIVE_ERRNO_ENOSHARE :i32 = 136;   /* No such host or network path */
+    pub const NX_FATDRIVE_ERRNO_ECASECLASH :i32 = 137;   /* Filename exists with different case */
+    pub const NX_FATDRIVE_ERRNO_EILSEQ :i32 = 138;   /* Illegal byte sequence */
+    pub const NX_FATDRIVE_ERRNO_EOVERFLOW :i32 = 139;   /* Value too large for defined data type */
+    pub const NX_FATDRIVE_ERRNO_ECANCELED :i32 = 140;   /* Operation canceled */
+    pub const NX_FATDRIVE_ERRNO_ENOTRECOVERABLE :i32 = 141;   /* State not recoverable */
+    pub const NX_FATDRIVE_ERRNO_EOWNERDEAD :i32 = 142;   /* Previous owner died */
+    pub const NX_FATDRIVE_ERRNO_ESTRPIPE :i32 = 143;   /* Streams pipe error */
 }

@@ -24,8 +24,8 @@ pub struct IdStore {
 
 impl IdStore {
 
-    const DT_DIR : u64 = 0x4;
-    const DT_REG : u64 = 0x1;
+    const _DT_DIR : u64 = 0x4;
+    const _DT_REG : u64 = 0x1;
     
     pub fn new() -> IdStore {
         IdStore {
@@ -170,7 +170,7 @@ impl IdStore {
 
         Ok(Some(DirEntryData {
             name : retval_source.file_name(),
-            type_val : if retval_source.is_file() { Self::DT_REG } else { Self::DT_DIR },
+            type_val : if retval_source.is_file() { Self::_DT_REG } else { Self::_DT_DIR },
             size : retval_source.len(),
         }))
     }
