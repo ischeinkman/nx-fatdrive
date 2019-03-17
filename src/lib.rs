@@ -18,6 +18,7 @@ extern crate lazy_static;
 pub mod buf_scsi;
 pub mod usb_comm;
 pub mod vecwrapper;
+pub mod filesystem;
 use vecwrapper::VecNewtype;
 
 mod capi_helpers;
