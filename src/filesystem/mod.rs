@@ -1,34 +1,58 @@
 use std::io::{Read, Write, Seek};
-pub trait FileSystem<DeviceType : Read + Write + Seek + Sized> : Sized {
-    type FileType : File;
-    type DirType : Directory<FileType=Self::FileType>;
+use crate::buf_scsi::OffsetScsiDevice;
+pub mod fatfs_rs;
 
-    fn new(device : DeviceType) -> Result<Self, std::io::Error>;
-    fn root_dir(&mut self) -> Self::DirType;
+
+pub trait FileSystemOps {
+    fn root(&mut self) -> Directory;
     fn stats(&self) -> FsStats;
 }
 
+pub enum FileSystem {
+    Fatfs(fatfs::FileSystem<OffsetScsiDevice>),
+}
+
+pub trait FileOps : Read + Write + Seek {
+    fn flush(&mut self) -> Result<(), u32>;
+    fn truncate(&mut self) -> Result<(), u32>;
+}
+
+pub enum File<'a> {
+    Fatfs(fatfs::File<'a, OffsetScsiDevice>),
+}
+
+pub trait DirectoryOps : Sized {
+    fn open_directory<PathType : AsRef<str>>(&mut self, path :PathType) -> Result<Directory, std::io::Error>;
+    fn create_directory<PathType : AsRef<str>>(&mut self, path :PathType) -> Result<Directory, std::io::Error>;
+    fn open_file<PathType : AsRef<str>>(&mut self, path :PathType) -> Result<File, std::io::Error>;
+    fn create_file<PathType : AsRef<str>>(&mut self, path :PathType) -> Result<File, std::io::Error>;
+    fn remove_path<PathType : AsRef<str>>(&mut self, path :PathType) -> Result<(), std::io::Error>;
+    fn iter<'a>(&'a mut self) -> DirIter<'a>;
+}
+
+pub enum Directory<'a> {
+    Fatfs(fatfs_rs::FatfsDirectory<'a>),
+}
+
+pub trait DirIterOps : Iterator<Item=DirEntryData> {
+
+}
+
+pub enum DirIter<'a> {
+    Fatfs(fatfs_rs::FatfsDirIter<'a> ),
+}
+
+
+
 pub struct FsStats {
     pub cluster_size : u64, 
-    pub free_clusters : u64, 
-}
-
-pub trait File : Read + Write + Seek {
-    fn flush(&mut self) -> Result<(), std::io::Error>;
-    fn truncate(&mut self) -> Result<(), std::io::Error>;
-}
-
-pub trait Directory : IntoIterator<Item=DirEntryData> + Sized {
-    type FileType : File;
-    fn open_directory<PathType : AsRef<str>>(&mut self, path :PathType) -> Result<Self, std::io::Error>;
-    fn create_directory<PathType : AsRef<str>>(&mut self, path :PathType) -> Result<Self, std::io::Error>;
-    fn remove_path<PathType : AsRef<str>>(&mut self, path :PathType) -> Result<(), std::io::Error>;
+    pub free_clusters : u64,
+    pub total_clusters : u64, 
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DirEntryData {
     pub name : String, 
-    pub size : u64,
     pub len : usize,
     pub flags : u64, 
 }

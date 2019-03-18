@@ -7,6 +7,7 @@ use scsi::scsi::ScsiBlockDevice;
 use fatfs::{Dir, DirEntry, File, FileSystem, ReadWriteSeek};
 use vecwrapper::VecNewtype;
 use buf_scsi::OffsetScsiDevice;
+use filesystem;
 use std::collections::HashMap;
 use std::convert::AsRef;
 use std::io::{ErrorKind, Read, Write, Seek, SeekFrom};
