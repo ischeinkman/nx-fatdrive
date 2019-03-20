@@ -443,7 +443,9 @@ pub unsafe extern "C" fn usbFsReadDir(
     match current {
         Some(ent) => {
             let bytes = ent.name.as_bytes();
-            std::ptr::copy(bytes.as_ptr(), name, namemax.min(bytes.len()));
+            let name_len = (namemax - 1).min(bytes.len());
+            std::ptr::copy_nonoverlapping(bytes.as_ptr(), name, name_len);
+            std::ptr::write(name.offset(name_len as isize), 0);
             *type_ptr = ent.type_val;
             *size = ent.size;
         },
