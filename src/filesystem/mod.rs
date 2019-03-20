@@ -1,24 +1,26 @@
 use std::io::{Read, Write, Seek};
 use crate::buf_scsi::OffsetScsiDevice;
 pub mod fatfs_rs;
+pub mod fatfs_raw;
 
 
 pub trait FileSystemOps {
-    fn root(&mut self) -> Directory;
-    fn stats(&self) -> FsStats;
+    fn root(&mut self) -> Result<Directory, std::io::Error>;
+    fn stats(&self) -> Result<FsStats, std::io::Error>;
 }
 
 pub enum FileSystem {
     Fatfs(fatfs::FileSystem<OffsetScsiDevice>),
+    FatfsSys(fatfs_raw::FatfsSysFileSystem),
 }
 
 pub trait FileOps : Read + Write + Seek {
-    fn flush(&mut self) -> Result<(), u32>;
-    fn truncate(&mut self) -> Result<(), u32>;
+    fn truncate(&mut self) -> Result<(), std::io::Error>;
 }
 
 pub enum File<'a> {
     Fatfs(fatfs::File<'a, OffsetScsiDevice>),
+    FatfsSys(fatfs_raw::FatfsSysFile),
 }
 
 pub trait DirectoryOps : Sized {
@@ -32,6 +34,7 @@ pub trait DirectoryOps : Sized {
 
 pub enum Directory<'a> {
     Fatfs(fatfs_rs::FatfsDirectory<'a>),
+    FatfsSys(fatfs_raw::FatfsSysDir),
 }
 
 pub trait DirIterOps : Iterator<Item=DirEntryData> {
@@ -40,6 +43,7 @@ pub trait DirIterOps : Iterator<Item=DirEntryData> {
 
 pub enum DirIter<'a> {
     Fatfs(fatfs_rs::FatfsDirIter<'a> ),
+    FatfsSys(fatfs_raw::FatfsSysDirIter<'a> ),
 }
 
 

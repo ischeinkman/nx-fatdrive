@@ -4,6 +4,7 @@
 extern crate fatfs;
 extern crate libc;
 extern crate libnx_rs;
+extern crate fatfs_sys;
 use libnx_rs::LibnxError;
 use libnx_rs::usbhs::InterfaceAvailableEvent;
 extern crate mbr_nostd;

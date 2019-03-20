@@ -25,6 +25,9 @@ version = "0.2"
 [dependencies.rand]
 version = "0.5"
 
+[dependencies.fatfs-sys]
+git = "https://github.com/leo60228/fatfs-sys"
+
 [replace]
 "num_cpus:1.8.0" = { git = 'https://github.com/kloumpt/num_cpus/', branch = 'nintendo-3ds-horizon' }
 
