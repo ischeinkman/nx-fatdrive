@@ -6,7 +6,7 @@ use std::io;
 use std::io::{BufRead, Read, Seek, SeekFrom, Write};
 
 pub struct OffsetScsiDevice {
-    device: scsi::scsi::ScsiBlockDevice<UsbClient, VecNewtype, VecNewtype, VecNewtype>,
+    pub device: scsi::scsi::ScsiBlockDevice<UsbClient, VecNewtype, VecNewtype, VecNewtype>,
     block_buffer: VecNewtype,
     partition_start: usize, //bytes
     partition_idx: usize,   //bytes from partition_start

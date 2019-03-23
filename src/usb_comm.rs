@@ -105,6 +105,10 @@ impl UsbClient {
             WriteEndpoint(write_ep),
         ))
     }
+
+    pub fn is_connected(&self) -> bool {
+        self.device_handle.is_connected().unwrap_or(false)
+    }
 }
 
 pub struct UsbClient {
