@@ -1,12 +1,14 @@
 use std::io::{Read, Write, Seek};
 use crate::buf_scsi::OffsetScsiDevice;
+use mbr_nostd::PartitionTableEntry;
 pub mod fatfs_rs;
 pub mod fatfs_raw;
 
 
-pub trait FileSystemOps {
+pub trait FileSystemOps : Sized {
     fn root(&mut self) -> Result<Directory, std::io::Error>;
     fn stats(&self) -> Result<FsStats, std::io::Error>;
+    fn from_device(dev : OffsetScsiDevice, part : PartitionTableEntry) -> Result<Self, std::io::Error>;
 }
 
 pub enum FileSystem {

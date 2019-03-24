@@ -10,6 +10,7 @@ use fatfs_sys::{
     f_unlink, f_mkdir,
     f_truncate, f_getfree,
     FatfsDiskHandler, register_disk_handler,
+    disk_ioctl,
     BYTE, DSTATUS, DWORD, UINT, DRESULT, 
 };
 use super::{FileOps, FileSystemOps, DirectoryOps, DirIterOps, File, Directory, DirIter, DirEntryData, FsStats};
@@ -18,13 +19,14 @@ use std::io::{Read, Write, Seek, SeekFrom, Error, ErrorKind};
 use std::ffi::{CString, CStr};
 use std::os::raw::c_void;
 use std::ptr;
-
+use mbr_nostd::{PartitionTableEntry, PartitionType};
 
 pub const IOCTL_SET_DEFAULT_DISK : BYTE = 0xD0;
+const IOCTL_ADD_FILESYSTEM : BYTE = 0xAD;
 
 pub struct FatfsSysFileSystem {
     path : Option<CString>,
-    device : OffsetScsiDevice,
+    idx : BYTE,
 }
 
 impl FatfsSysFileSystem {
@@ -32,9 +34,6 @@ impl FatfsSysFileSystem {
         512
     }
 
-    pub fn sync(&mut self) -> Result<(), std::io::Error> {
-        self.device.flush()
-    }
 }
 
 impl FileSystemOps for FatfsSysFileSystem {
@@ -65,10 +64,54 @@ impl FileSystemOps for FatfsSysFileSystem {
         };
         Ok(retval)
     }
+    fn from_device(device: OffsetScsiDevice, partition_info : PartitionTableEntry) -> Result<Self, std::io::Error> {
+        let supported = match partition_info.partition_type {
+            PartitionType::Fat32(_) | PartitionType::Fat16(_) | PartitionType::Fat12(_) | PartitionType::NtfsExfat(_) => true,
+            _ => false
+        };
+        if !supported {
+            return Err(std::io::Error::from(std::io::ErrorKind::InvalidData));
+        }
+        let mut nh = AddFsBuffer::Input(DeviceHandle {device, partition_info});
+        let e = disk_ioctl(0, IOCTL_ADD_FILESYSTEM, &mut nh as *mut AddFsBuffer as *mut c_void);
+        match (e, nh) {
+            (DRESULT::RES_OK, AddFsBuffer::Output(nidx)) => {
+                Ok(FatfsSysFileSystem {
+                    path : None, 
+                    idx : nidx,
+                })
+            },
+            _ => Err(std::io::Error::from(ErrorKind::Other)),
+        }
+    }
+}
+
+struct DeviceHandle {
+    device : OffsetScsiDevice,
+    partition_info : PartitionTableEntry,
+}
+
+impl DeviceHandle {
+    pub fn sync(&mut self) -> Result<(), std::io::Error> {
+        self.device.flush()
+    }
+
+    pub fn sector_size(&self) -> usize {
+        self.device.device.block_size() as usize
+    }
+
+    pub fn sector_count(&self) -> usize {
+        self.partition_info.sector_count as usize
+    }
+}
+
+enum AddFsBuffer {
+    Input(DeviceHandle),
+    Output(BYTE),
 }
 
 struct FatfsSysContext {
-    drives : [Option<FatfsSysFileSystem> ; 15],
+    drives : [Option<DeviceHandle> ; 15],
     default_disk : BYTE,
 }
 
@@ -81,7 +124,7 @@ impl FatfsSysContext {
             self.default_disk as usize
         }
     }
-    pub fn get_filesystem(&mut self, pdrv : u8) -> Option<&mut FatfsSysFileSystem> {
+    pub fn get_filesystem(&mut self, pdrv : u8) -> Option<&mut DeviceHandle> {
         let idx = self.get_idx(pdrv);
         self.drives[idx].as_mut()
     }
@@ -97,6 +140,19 @@ impl FatfsSysContext {
             default_disk : 0,
         };
         register_disk_handler(ctx);
+    }
+
+    pub fn add_fs(&mut self, new_fs : DeviceHandle) -> BYTE {
+        let mut idx = self.default_disk;
+        while (idx + 1) % (self.drives.len() as BYTE) != self.default_disk {
+            let is_empty = self.drives[idx as usize].as_mut().map(|dev| !dev.device.device.comm_channel.is_connected()).unwrap_or(true);
+            if is_empty {
+                self.drives[idx as usize] = Some(new_fs);
+                return idx;
+            }
+            idx += 1;
+        }
+        0xFF
     }
 }
 impl FatfsDiskHandler for FatfsSysContext {
@@ -147,12 +203,12 @@ impl FatfsDiskHandler for FatfsSysContext {
             self.default_disk = new_default;
             return DRESULT::RES_OK;
         }
-        let dev = match self.get_filesystem(pdrv) {
-            Some(dref) => dref, 
-            None => {return DRESULT::RES_NOTRDY;}
-        };
         match cmd {
             CTRL_SYNC => {
+                let dev = match self.get_filesystem(pdrv) {
+                    Some(dref) => dref, 
+                    None => {return DRESULT::RES_NOTRDY;}
+                };
                 let synced = dev.sync();
                 match synced {
                     Ok(_) => DRESULT::RES_OK,
@@ -160,6 +216,10 @@ impl FatfsDiskHandler for FatfsSysContext {
                 }
             },
             GET_SECTOR_SIZE => {
+                let dev = match self.get_filesystem(pdrv) {
+                    Some(dref) => dref, 
+                    None => {return DRESULT::RES_NOTRDY;}
+                };
                 let s = dev.sector_size();
                 let castbuff = buf as *mut DWORD;
                 unsafe {
@@ -168,29 +228,43 @@ impl FatfsDiskHandler for FatfsSysContext {
                 DRESULT::RES_OK
             },
             GET_BLOCK_SIZE => {
-                match dev.stats() {
-                    Ok(s) => {
-                        let castbuff = buf as *mut DWORD; 
-                        unsafe {
-                            std::ptr::write(castbuff, (s.cluster_size/dev.sector_size() as u64) as u32);
-                        }
-                        DRESULT::RES_OK
-                    },
-                    Err(_e) => DRESULT::RES_ERROR,
-                }
+                //TODO: How do we get the block size?
+                DRESULT::RES_PARERR
             },
             GET_SECTOR_COUNT => {
-                match dev.stats() {
-                    Ok(s) => {
-                        let castbuff = buf as *mut DWORD; 
-                        unsafe {
-                            std::ptr::write(castbuff, (s.total_clusters * (s.cluster_size/(dev.sector_size() as u64))) as u32);
-                        }
-                        DRESULT::RES_OK
-                    },
-                    Err(_e) => DRESULT::RES_ERROR,
+                let dev = match self.get_filesystem(pdrv) {
+                    Some(dref) => dref, 
+                    None => {return DRESULT::RES_NOTRDY;}
+                };
+                let s = dev.sector_count();
+                let castbuff = buf as *mut DWORD; 
+                unsafe {
+                    std::ptr::write(castbuff, s as u32);
                 }
+                DRESULT::RES_OK
             },
+            IOCTL_ADD_FILESYSTEM => {
+                let castbuff = buf as *mut AddFsBuffer;
+                let fs_buff = match unsafe { castbuff.as_mut() } {
+                    Some(f) => f, 
+                    None => { return DRESULT::RES_PARERR; },
+                };
+                let ndev = {
+                    let movedbuff = std::mem::replace(fs_buff, AddFsBuffer::Output(0xFF));
+                    match movedbuff {
+                        AddFsBuffer::Input(h) => h, 
+                        AddFsBuffer::Output(_) => {
+                            return DRESULT::RES_PARERR;
+                        }
+                    }
+                };
+                let nidx = self.add_fs(ndev);
+                *fs_buff = AddFsBuffer::Output(nidx);
+                match nidx {
+                    0xFF => DRESULT::RES_ERROR,
+                    _ => DRESULT::RES_OK,
+                }
+            }
             CTRL_TRIM => DRESULT::RES_OK,
             _ => DRESULT::RES_PARERR
         }

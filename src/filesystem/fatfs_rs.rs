@@ -2,6 +2,7 @@ use fatfs::{Dir,  FileAttributes};
 use crate::buf_scsi::OffsetScsiDevice;
 use super::{FileOps, File, DirectoryOps, FileSystemOps, DirEntryData, DirEntryType, DirIter, DirIterOps, Directory, FsStats};
 use crate::capi_helpers::{LibnxErrMapper};
+use mbr_nostd::{PartitionTableEntry, PartitionType};
 use std::io::Write;
 use std::io;
 
@@ -83,5 +84,11 @@ impl FileSystemOps for fatfs::FileSystem<OffsetScsiDevice> {
             free_clusters : inner.free_clusters() as u64, 
         };
         Ok(retval)
+    }
+    fn from_device(dev: OffsetScsiDevice, part : PartitionTableEntry) -> Result<Self, io::Error> {
+        match part.partition_type {
+            PartitionType::Fat32(_) | PartitionType::Fat16(_) | PartitionType::Fat12(_) => Self::new(dev, fatfs::FsOptions::new()),
+            _ => Err(io::Error::from(io::ErrorKind::InvalidData))
+        }
     }
 }
