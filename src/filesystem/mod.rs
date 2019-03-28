@@ -16,6 +16,26 @@ pub enum FileSystem {
     FatfsSys(fatfs_raw::FatfsSysFileSystem),
 }
 
+impl FileSystemOps for FileSystem {
+    fn root(&mut self) -> Result<Directory, std::io::Error> {
+        match self {
+            FileSystem::Fatfs(f) => FileSystemOps::root(f),
+            FileSystem::FatfsSys(f) => FileSystemOps::root(f),
+        }
+    }
+    fn stats(&self) -> Result<FsStats, std::io::Error> {
+        match self {
+            FileSystem::Fatfs(f) => FileSystemOps::stats(f),
+            FileSystem::FatfsSys(f) => FileSystemOps::stats(f),
+        }
+    }
+    fn from_device(dev : OffsetScsiDevice, part : PartitionTableEntry) -> Result<Self, std::io::Error> {
+        //TODO: how do we deal with ownership?
+        fatfs_raw::FatfsSysFileSystem::from_device(dev, part).map(|f| FileSystem::FatfsSys(f))
+    }
+
+}
+
 pub trait FileOps : Read + Write + Seek {
     fn truncate(&mut self) -> Result<(), std::io::Error>;
 }
@@ -23,6 +43,49 @@ pub trait FileOps : Read + Write + Seek {
 pub enum File<'a> {
     Fatfs(fatfs::File<'a, OffsetScsiDevice>),
     FatfsSys(fatfs_raw::FatfsSysFile),
+}
+
+impl <'a> Read for File<'a> {
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize, std::io::Error> {
+        match self {
+            File::Fatfs(f) => Read::read(f, buf),
+            File::FatfsSys(f) => Read::read(f, buf),
+        }
+    }
+}
+impl <'a> Write for File<'a> {
+    fn write(&mut self, buf: &[u8]) -> Result<usize, std::io::Error> {
+        match self {
+            File::Fatfs(f) => Write::write(f, buf),
+            File::FatfsSys(f) => Write::write(f, buf),
+        }
+    }
+    fn flush(&mut self) -> Result<(), std::io::Error> {
+        match self {
+            File::Fatfs(f) => Write::flush(f),
+            File::FatfsSys(f) => Write::flush(f),
+        }
+    }
+}
+
+impl <'a> Seek for File<'a> {
+    fn seek(&mut self, pos: std::io::SeekFrom) -> Result<u64, std::io::Error> {
+        match self {
+            File::Fatfs(f) => Seek::seek(f, pos),
+            File::FatfsSys(f) => Seek::seek(f, pos),
+        }
+    }
+
+}
+
+impl <'a> FileOps for File<'a> {
+    fn truncate(&mut self) -> Result<(), std::io::Error> {
+        match self {
+            File::Fatfs(f) => FileOps::truncate(f),
+            File::FatfsSys(f) => FileOps::truncate(f),
+        }
+    }
+
 }
 
 pub trait DirectoryOps : Sized {
@@ -39,6 +102,46 @@ pub enum Directory<'a> {
     FatfsSys(fatfs_raw::FatfsSysDir),
 }
 
+impl <'a> DirectoryOps for Directory<'a> {
+    fn open_directory<PathType : AsRef<str>>(&mut self, path :PathType) -> Result<Directory, std::io::Error> {
+        match self {
+            Directory::Fatfs(f) => DirectoryOps::open_directory(f, path),
+            Directory::FatfsSys(f) => DirectoryOps::open_directory(f, path),
+        }
+    }
+    fn create_directory<PathType : AsRef<str>>(&mut self, path :PathType) -> Result<Directory, std::io::Error> {
+        match self {
+            Directory::Fatfs(f) => DirectoryOps::create_directory(f, path),
+            Directory::FatfsSys(f) => DirectoryOps::create_directory(f, path),
+        }
+    }
+    fn open_file<PathType : AsRef<str>>(&mut self, path :PathType) -> Result<File, std::io::Error> {
+        match self {
+            Directory::Fatfs(f) => DirectoryOps::open_file(f, path),
+            Directory::FatfsSys(f) => DirectoryOps::open_file(f, path),
+        }
+    }
+    fn create_file<PathType : AsRef<str>>(&mut self, path :PathType) -> Result<File, std::io::Error> {
+        match self {
+            Directory::Fatfs(f) => DirectoryOps::create_file(f, path),
+            Directory::FatfsSys(f) => DirectoryOps::create_file(f, path),
+        }
+    }
+    fn remove_path<PathType : AsRef<str>>(&mut self, path :PathType) -> Result<(), std::io::Error> {
+        match self {
+            Directory::Fatfs(f) => DirectoryOps::remove_path(f, path),
+            Directory::FatfsSys(f) => DirectoryOps::remove_path(f, path),
+        }
+    }
+    fn iter<'b>(&'b mut self) -> DirIter<'b> {
+        match self {
+            Directory::Fatfs(f) => DirectoryOps::iter(f),
+            Directory::FatfsSys(f) => DirectoryOps::iter(f),
+        }
+    }
+    
+}
+
 pub trait DirIterOps : Iterator<Item=DirEntryData> {
 
 }
@@ -48,7 +151,17 @@ pub enum DirIter<'a> {
     FatfsSys(fatfs_raw::FatfsSysDirIter<'a> ),
 }
 
+impl <'a> Iterator for DirIter<'a> {
+    type Item = DirEntryData;
+    fn next(&mut self) -> Option<DirEntryData> {
+        match self {
+            DirIter::Fatfs(f) => Iterator::next(f),
+            DirIter::FatfsSys(f) => Iterator::next(f),
+        }
+    }
+}
 
+impl <'a> DirIterOps for DirIter<'a> {}
 
 pub struct FsStats {
     pub cluster_size : u64, 
